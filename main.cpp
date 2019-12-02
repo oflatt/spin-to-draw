@@ -10,8 +10,8 @@
 
 #define M_PI 3.141592654f
 
-unsigned int g_windowWidth = 800;
-unsigned int g_windowHeight = 600;
+unsigned int g_windowWidth = 1000;
+unsigned int g_windowHeight = 800;
 char* g_windowName = "HW3-3D-Basics";
 
 GLFWwindow* g_window;
@@ -34,7 +34,7 @@ float initialDistance = 4.5f;
 float distance = 4.5f;
 
 // per second
-float rotation_rate = 0.25f;
+float rotation_rate = 1.0f;
 float fovMoveSpeed = 0.1f;
 
 // Auxiliary math functions
@@ -370,11 +370,19 @@ void drawTeapot() {
 }
 void renderLines() {
 	//drawTeapot();
-	glLineWidth(3);
-	glBegin(GL_LINES);
-	glVertex3f(0.0, 0.0, 1.0);
-	glVertex3f(0.25, -0.25, 1.0);
-	glEnd();
+  float time = getTime();
+  float angle = (time * (M_PI * 2)) * rotation_rate;
+  glDisable(GL_LIGHTING);
+	
+	
+  glColor3f(0, 0, 0);
+  glLineWidth(5);
+  glBegin(GL_LINES);
+  glVertex3f(0.0, 0.0, distance);
+  glVertex3f(cos(angle), sin(angle), distance);
+  glEnd();
+
+  glEnable(GL_LIGHTING);
 }
 
 void drawCheckerBoard() {
