@@ -2,6 +2,7 @@
 #include "GLFW/glfw3.h"
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -37,6 +38,15 @@ float distance = 4.5f;
 // per second
 float rotation_rate = 0.05f;
 float fovMoveSpeed = 0.1f;
+
+struct Rotating {
+  std::complex<float> coefficient;
+  int n;
+};
+
+bool compareRotating(Rotating& r1, Rotating& r2) {
+  return std::abs(r1.coefficient) > std::abs(r2.coefficient);
+}
 
 // Auxiliary math functions
 float dotProduct(const float* a, const float* b)
@@ -350,17 +360,12 @@ void setModelViewMatrix()
 	glLoadMatrixf(g_modelViewMatrix);
 }
 
-void renderLines() {
+const std::complex<float> complex_i(0, 1);
+int granularity = 11;
+int start = -(granularity / 2);
 
-  const std::complex<float> complex_i(0, 1);
-  std::vector<std::complex<float>> samples = {std::complex<float>(-2.0, 2.0), std::complex<float>(0, 2.0),
-						std::complex<float>(2.0, 2.0),
-				std::complex<float>(2.0, 0.0), std::complex<float>(2.0, -2.0),
-				std::complex<float>(0.0, -2.0), std::complex<float>(-2.0, -2.0)};
-
-  int granularity = 10;
-  int start = -(granularity / 2);
-  std::vector<std::complex<float>> coefficients;
+std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
+  std::vector<Rotating> rotatings;
   for(int i = 0; i < granularity; i++) {
     int n = i + start;
     std::complex<float> c(0, 0);
@@ -368,24 +373,46 @@ void renderLines() {
       float t = ((float) samplei) / ((float) samples.size());
       c += samples[samplei] * std::exp(-n * M_PI * 2 * complex_i * t) / ((float) samples.size());
     }
-    coefficients.push_back(c);
+    Rotating r;
+    r.coefficient = c;
+    r.n = n;
+    rotatings.push_back(r);
   }
+
+  std::sort(rotatings.begin(), rotatings.end(), compareRotating);
+  
+  return rotatings;
+}
+
+void renderLines() {
+
+  
+  std::vector<std::complex<float>> samples = {std::complex<float>(-2.0, 2.0), std::complex<float>(0, 2.0),
+						std::complex<float>(2.0, 2.0),
+				std::complex<float>(2.0, 0.0), std::complex<float>(2.0, -2.0),
+				std::complex<float>(0.0, -2.0), std::complex<float>(-2.0, -2.0)};
+
+  std::vector<Rotating> rotatings = make_rotating(samples);
+  
+  
 
   glDisable(GL_LIGHTING);
 
   glColor3f(0, 0, 0);
-  glLineWidth(5);
+  glLineWidth(3);
   glBegin(GL_LINES);
   
-  float time = getTime();
+  float time = getTime() * 2 * M_PI * rotation_rate;
   std::complex<float> currentpos(0, 0);
-  for(int i = 0; i < granularity; i++) {
-	  int n = i + start;
-	  std::complex<float> oldpos(currentpos);
-	  currentpos += coefficients[i] * std::exp(n * 2 * M_PI * complex_i * time);
-	  glVertex3f(oldpos.real(), oldpos.imag(), distance);
-	  glVertex3f(currentpos.real(), currentpos.imag(), distance);
+
+  for(Rotating r : rotatings) {
+    int n = r.n;
+    std::complex<float> oldpos(currentpos);
+    currentpos += r.coefficient * std::exp(n * 2 * M_PI * complex_i * time);
+    glVertex3f(oldpos.real(), oldpos.imag(), distance);
+    glVertex3f(currentpos.real(), currentpos.imag(), distance);
   }
+
   glEnd();
 
   glEnable(GL_LIGHTING);
