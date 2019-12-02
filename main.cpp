@@ -6,6 +6,7 @@
 #include <fstream>
 #include <cmath>
 #include <tuple>
+#include <complex>
 
 
 #define M_PI 3.141592654f
@@ -34,7 +35,7 @@ float initialDistance = 4.5f;
 float distance = 4.5f;
 
 // per second
-float rotation_rate = 1.0f;
+float rotation_rate = 0.05f;
 float fovMoveSpeed = 0.1f;
 
 // Auxiliary math functions
@@ -349,37 +350,42 @@ void setModelViewMatrix()
 	glLoadMatrixf(g_modelViewMatrix);
 }
 
-void drawTeapot() {
-	glBegin(GL_TRIANGLES);
-	for (size_t f = 0; f < g_meshIndices.size(); ++f)
-	{
-		const float scale = 0.1f;
-		const unsigned int idx = g_meshIndices[f];
-		const float x = scale * g_meshVertices[3 * idx + 0];
-		const float y = scale * g_meshVertices[3 * idx + 1];
-		const float z = scale * g_meshVertices[3 * idx + 2];
-
-		const float nx = g_meshNormals[3 * idx + 0];
-		const float ny = g_meshNormals[3 * idx + 1];
-		const float nz = g_meshNormals[3 * idx + 2];
-
-		glNormal3f(nx, ny, nz);
-		glVertex3f(x, y, z);
-	}
-	glEnd();
-}
 void renderLines() {
-	//drawTeapot();
-  float time = getTime();
-  float angle = (time * (M_PI * 2)) * rotation_rate;
+
+  const std::complex<float> complex_i(0, 1);
+  std::vector<std::complex<float>> samples = {std::complex<float>(-2.0, 2.0), std::complex<float>(0, 2.0),
+						std::complex<float>(2.0, 2.0),
+				std::complex<float>(2.0, 0.0), std::complex<float>(2.0, -2.0),
+				std::complex<float>(0.0, -2.0), std::complex<float>(-2.0, -2.0)};
+
+  int granularity = 10;
+  int start = -(granularity / 2);
+  std::vector<std::complex<float>> coefficients;
+  for(int i = 0; i < granularity; i++) {
+    int n = i + start;
+    std::complex<float> c(0, 0);
+    for(int samplei = 0; samplei < samples.size(); samplei++) {
+      float t = ((float) samplei) / ((float) samples.size());
+      c += samples[samplei] * std::exp(-n * M_PI * 2 * complex_i * t) / ((float) samples.size());
+    }
+    coefficients.push_back(c);
+  }
+
   glDisable(GL_LIGHTING);
-	
-	
+
   glColor3f(0, 0, 0);
   glLineWidth(5);
   glBegin(GL_LINES);
-  glVertex3f(0.0, 0.0, distance);
-  glVertex3f(cos(angle), sin(angle), distance);
+  
+  float time = getTime();
+  std::complex<float> currentpos(0, 0);
+  for(int i = 0; i < granularity; i++) {
+	  int n = i + start;
+	  std::complex<float> oldpos(currentpos);
+	  currentpos += coefficients[i] * std::exp(n * 2 * M_PI * complex_i * time);
+	  glVertex3f(oldpos.real(), oldpos.imag(), distance);
+	  glVertex3f(currentpos.real(), currentpos.imag(), distance);
+  }
   glEnd();
 
   glEnable(GL_LIGHTING);
