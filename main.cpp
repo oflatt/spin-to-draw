@@ -15,7 +15,7 @@
 
 unsigned int g_windowWidth = 1000;
 unsigned int g_windowHeight = 800;
-char* g_windowName = "HW3-3D-Basics";
+char* g_windowName = "Spin to Draw";
 
 GLFWwindow* g_window;
 
@@ -88,7 +88,7 @@ void getCurrentPosOfMouse(double &xpos, double &ypos) {
 	//std::cout << xpos << ypos << std::endl;
 }
 
-void computeNormals()
+/*void computeNormals()
 {
 	g_meshNormals.resize(g_meshVertices.size());
 	for (int i = 0; i < g_meshNormals.size(); i++) {
@@ -130,48 +130,7 @@ void computeNormals()
 		normalize(vecData + (v * 3));
 
 	}
-}
-
-void loadObj(std::string p_path)
-{
-	std::ifstream nfile;
-	nfile.open(p_path);
-	std::string s;
-
-	while (nfile >> s)
-	{
-		if (s.compare("v") == 0)
-		{
-			float x, y, z;
-			nfile >> x >> y >> z;
-			g_meshVertices.push_back(x);
-			g_meshVertices.push_back(y);
-			g_meshVertices.push_back(z);
-		}
-		else if (s.compare("f") == 0)
-		{
-			std::string sa, sb, sc;
-			unsigned int a, b, c;
-			nfile >> sa >> sb >> sc;
-
-			a = std::stoi(sa);
-			b = std::stoi(sb);
-			c = std::stoi(sc);
-
-			g_meshIndices.push_back(a - 1);
-			g_meshIndices.push_back(b - 1);
-			g_meshIndices.push_back(c - 1);
-		}
-		else
-		{
-			std::getline(nfile, s);
-		}
-	}
-
-	computeNormals();
-
-	std::cout << p_path << " loaded. Vertices: " << g_meshVertices.size() / 3 << " Triangles: " << g_meshIndices.size() / 3 << std::endl;
-}
+}*/
 
 double getTime()
 {
@@ -218,65 +177,6 @@ void togglePerspective() {
 	}
 }
 
-void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_action, int p_mods)
-{
-	if (p_key == GLFW_KEY_ESCAPE && p_action == GLFW_PRESS)
-	{
-		glfwSetWindowShouldClose(g_window, GL_TRUE);
-	}
-	if (p_key == GLFW_KEY_P && p_action == GLFW_PRESS) {
-
-		// Perspective Projection
-		enablePersp = true;
-		togglePerspective();
-		std::cout << "Perspective activated\n";
-
-	}
-	if (p_key == GLFW_KEY_O && p_action == GLFW_PRESS) {
-
-		// Orthographic Projection
-		enablePersp = false;
-		togglePerspective();
-		std::cout << "Orthogonal activated\n";
-
-	}
-	if (p_key == GLFW_KEY_S && p_action == GLFW_PRESS) {
-
-		// Toggle Spinning
-		if (!teapotSpin) {
-			std::cout << "Teapot spinning on\n";
-		}
-		else {
-			std::cout << "Teapot spinning off\n";
-		}
-		teapotSpin = !teapotSpin;
-	}
-	if (p_key == GLFW_KEY_D && p_action == GLFW_PRESS) {
-
-		// Toggle dolly zoom
-		if (!enableDolly)
-		{
-			std::cout << "Dolly zoom on\n";
-		}
-		else {
-			std::cout << "Dolly zoom off\n";
-		}
-		enableDolly = !enableDolly;
-	}
-	if (p_key == GLFW_KEY_C && p_action == GLFW_PRESS) {
-
-		// Show/hide Checkerboard
-		if (!showCheckerboard)
-		{
-			std::cout << "Show checkerboard\n";
-		}
-		else {
-			std::cout << "Hide checkerboard\n";
-		}
-		showCheckerboard = !showCheckerboard;
-	}
-}
-
 void initWindow()
 {
 	// initialize GLFW
@@ -295,8 +195,6 @@ void initWindow()
 		exit(1);
 	}
 
-	// callbacks
-	glfwSetKeyCallback(g_window, glfwKeyCallback);
 
 	// Make the window's context current
 	glfwMakeContextCurrent(g_window);
@@ -314,17 +212,6 @@ void initGL()
 	glEnable(GL_DEPTH_TEST);
 	glShadeModel(GL_SMOOTH);
 }
-
-void printHotKeys() {
-	std::cout << "\nHot Keys..\n"
-		<< "Orthogonal Projection:  O\n"
-		<< "Perspective Projection: P\n"
-		<< "Toggle Spinning:        S\n"
-		<< "Toggle Dolly Zoom:      D\n"
-		<< "Show/hide Checkerboard: C\n"
-		<< "Exit:                   Esc\n\n";
-}
-
 void clearModelViewMatrix()
 {
 	for (int i = 0; i < 4; ++i)
@@ -509,7 +396,5 @@ int main()
 {
 	initWindow();
 	initGL();
-	loadObj("data/teapot.obj");
-	printHotKeys();
 	renderLoop();
 }
