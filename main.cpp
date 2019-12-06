@@ -34,7 +34,7 @@ bool showCheckerboard = false;
 float fov = M_PI / 4.f;
 float initialDistance = 4.5f;
 float distance = 4.5f;
-
+//float distance = 0;
 // per second
 float rotation_rate = 0.05f;
 float fovMoveSpeed = 0.1f;
@@ -78,6 +78,13 @@ void meshIndicesToVec(float* dest, int index1, int index2) {
 	dest[0] = g_meshVertices[index2 * 3] - g_meshVertices[index1 * 3];
 	dest[1] = g_meshVertices[index2 * 3 + 1] - g_meshVertices[index1 * 3 + 1];
 	dest[2] = g_meshVertices[index2 * 3 + 2] - g_meshVertices[index1 * 3 + 2];
+}
+
+void getCurrentPosOfMouse(double &xpos, double &ypos) {
+	//double xpos, ypos;
+	
+	glfwGetCursorPos(g_window,&xpos, &ypos);
+	//std::cout << xpos << ypos << std::endl;
 }
 
 void computeNormals()
@@ -386,7 +393,9 @@ std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
 
 void renderLines() {
 
-  
+	double  xpos, ypos;
+	getCurrentPosOfMouse(xpos, ypos);
+	std::complex<float> newPos(xpos, ypos);
   std::vector<std::complex<float>> samples = {std::complex<float>(-2.0, 2.0), std::complex<float>(0, 2.0),
 						std::complex<float>(2.0, 2.0),
 				std::complex<float>(2.0, 0.0), std::complex<float>(2.0, -2.0),
@@ -403,7 +412,7 @@ void renderLines() {
   glBegin(GL_LINES);
   
   float time = getTime() * 2 * M_PI * rotation_rate;
-  std::complex<float> currentpos(0, 0);
+  std::complex<float> currentpos(0,0);
 
   for(Rotating r : rotatings) {
     int n = r.n;
