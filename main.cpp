@@ -38,11 +38,12 @@ float fov = M_PI / 2.f;
 
 // line up distance so that it matches the screen
 
-float distance = (1.0 / tan(fov/2)) * 0.25;
+float initialDistance = (1.0 / tan(fov/2)) * 0.25;
+float distance = initialDistance;
 
 // per second
-float rotation_rate = 0.05f;
-float fovMoveSpeed = 0.1f;
+float rotation_rate = 0.025f;
+
 
 // these define the coordinate system
 // the model is stored centered around 0, 0 and stretching from -0.5 to 0.5 along both x and y axis
@@ -82,7 +83,7 @@ bool compareRotating(Rotating& r1, Rotating& r2) {
 
 
 const std::complex<float> complex_i(0, 1);
-int granularity = 11;
+int granularity = 20;
 int start = -(granularity / 2);
 
 std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
@@ -358,8 +359,8 @@ void renderLines() {
 
     std::complex<float> oldposScreen = model_to_screen(oldpos);
     std::complex<float> currentposScreen = model_to_screen(currentpos);
-    glVertex3f(oldposScreen.real(), oldposScreen.imag(), distance);
-    glVertex3f(currentposScreen.real(), currentposScreen.imag(), distance);
+    glVertex3f(oldposScreen.real(), oldposScreen.imag(), 0);
+    glVertex3f(currentposScreen.real(), currentposScreen.imag(), 0);
   }
 
   glEnd();
@@ -384,8 +385,8 @@ void renderDrawing() {
     
     std::complex<float> last = model_to_screen(state.samples[lastIndex]);
     std::complex<float> current = model_to_screen(state.samples[i]);
-    glVertex3f(last.real(), last.imag(), distance);
-    glVertex3f(current.real(), current.imag(), distance);
+    glVertex3f(last.real(), last.imag(), 0);
+    glVertex3f(current.real(), current.imag(), 0);
   }
   
   glEnd();
