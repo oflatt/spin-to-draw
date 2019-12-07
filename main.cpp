@@ -44,7 +44,12 @@ float distance = initialDistance;
 
 // per second
 float rotation_rate = 0.025f;
+
 void renderDrawing();
+
+const std::complex<float> complex_i(0, 1);
+int granularity = 20;
+int start = -(granularity / 2);
 
 // these define the coordinate system
 // the model is stored centered around 0, 0 and stretching from -0.5 to 0.5 along both x and y axis
@@ -59,9 +64,87 @@ std::complex<float> mouse_to_model(double mouseX, double mouseY) {
 }
 
 
+std::complex<float> circleFunction(float time) {
+  return std::exp(M_PI * 2 * complex_i * time);
+}
+
+
+// lines specified by two points each
+// returns a float that is the magnitude to multiply point2-point1 by
+// a + bt = cj the x part of the vectors, a is the constant
+// ap + bp(t) = cp(j) solved
+std::pair<bool, float> interceptLines(std::complex<float> point1, std::complex<float> point2, std::complex<float> point3, std::complex<float> point4) {
+  float a = point1.real() - point3.real();
+  float b = point2.real() - point1.real(); // 1.0
+  float c = point4.real()- point3.real(); // 0.0
+  float ap = point1.imag() - point3.imag();
+  float bp = point2.imag()-point1.imag(); // 1.0
+  float cp = point4.imag() - point3.imag(); // -1.0
+  
+  
+  if (c == 0.0) {
+	  if (b == 0.0) {
+		  return std::make_pair(false, 0.0);
+	  }
+	  else {
+		  return std::make_pair(true, -a / b);
+	  }
+  }
+  
+  if(c*bp - b*cp == 0.0) {
+    return std::make_pair(false, 0.0);
+  }
+  float firstRes = c / (c*bp - b*cp);
+  float secondRes = (cp*a)/c - ap;
+  return std::make_pair(true, firstRes * secondRes);
+}
+
+// shapevec is a vector where each point has an angle greater than the last
+std::complex<float> interceptAngle(float angle, std::vector<std::complex<float>> shapeVec) {
+  for(int i = 0; i < shapeVec.size(); i++) {
+    int lastIndex = i-1;
+    if(i == 0) {
+      lastIndex = shapeVec.size()-1;
+    }
+    std::complex<float> point1 = std::complex<float>(0, 0);
+    std::complex<float> point2 = std::exp(complex_i * angle);
+    std::complex<float> point3 = shapeVec[lastIndex];
+    std::complex<float> point4 = shapeVec[i];
+    //std::float mag = std::abs(point4 - point3);
+    std::pair<bool, float> intercept = interceptLines(point3, point4, point1, point2);
+    std::pair<bool, float> intercept2 = interceptLines(point1, point2, point3, point4);
+    if(intercept.first && intercept.second <= 1.0  && intercept.second >= 0 && intercept2.second >= 0) {
+      return intercept.second * (point4 - point3) + point3;
+    }
+  }
+  // this should not happen
+  std::cout << "bad happened" << std::endl;
+  return shapeVec[0];
+  
+}
+
+float squareSize = 1.0;
+std::vector<std::complex<float>> squareShapeVec = {std::complex<float>(-squareSize, squareSize),
+						   std::complex<float>(squareSize, squareSize),
+						   std::complex<float>(squareSize, -squareSize),
+						   std::complex<float>(-squareSize, -squareSize)};
+std::complex<float> squareFunction(float time) {
+  
+  time = std::fmod(time, 1);
+  float angle = -M_PI * 2 * time;
+  return interceptAngle(angle, squareShapeVec);
+}
+
 struct Rotating {
   std::complex<float> coefficient;
   int n;
+  std::complex<float> (*circleFunctionPointer)(float time);
+
+  Rotating(int nIn, std::complex<float> coefficientIn) {
+    n = nIn;
+    coefficient = coefficientIn;
+    circleFunctionPointer = circleFunction;
+  }
 };
 
 
@@ -72,8 +155,11 @@ struct State {
   double time = 0;
   float rotation;
   GLfloat g_modelViewMatrixState[16];
+  std::complex<float> (*circleFunctionPointer)(float time);
+  
   State() {
     mousePressed = false;
+    circleFunctionPointer = squareFunction;
   }
 };
 
@@ -85,9 +171,6 @@ bool compareRotating(Rotating& r1, Rotating& r2) {
 }
 
 
-const std::complex<float> complex_i(0, 1);
-int granularity = 20;
-int start = -(granularity / 2);
 
 std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
   std::vector<Rotating> rotatings;
@@ -96,11 +179,11 @@ std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
     std::complex<float> c(0, 0);
     for(int samplei = 0; samplei < samples.size(); samplei++) {
       float t = ((float) samplei) / ((float) samples.size());
-      c += samples[samplei] * std::exp(-n * M_PI * 2 * complex_i * t) / ((float) samples.size());
+      c += samples[samplei] * state.circleFunctionPointer(-n * t);
     }
-    Rotating r;
-    r.coefficient = c;
-    r.n = n;
+    c /= ((float) samples.size());
+    Rotating r(n, c);
+    r.circleFunctionPointer = state.circleFunctionPointer;
     rotatings.push_back(r);
   }
 
@@ -394,9 +477,11 @@ void renderLines() {
   std::complex<float> currentpos(0, 0);
 
   for(Rotating r : state.rotatings) {
-    int n = r.n;
     std::complex<float> oldpos(currentpos);
-    currentpos += r.coefficient * std::exp(n * 2 * M_PI * complex_i * time);
+    std::complex<float> vec = r.coefficient * r.circleFunctionPointer(r.n * time);
+    
+    //vec *= std::abs(r.coefficient);
+    currentpos += vec;
 
     std::complex<float> oldposScreen = model_to_screen(oldpos);
     std::complex<float> currentposScreen = model_to_screen(currentpos);
@@ -531,8 +616,14 @@ void renderLoop()
 	}
 }
 
+void printme(std::complex<float> a) {
+  std::cout << a.real() << " and " << a.imag() << std::endl;
+}
+
 int main()
 {
+  std::cout << interceptLines(std::complex<float>(0,0), std::complex<float>(-1.0,0.0),
+			      std::complex<float>(0.5,1.0), std::complex<float>(0.5,-1.0)).second << std::endl;
 	initWindow();
 	initGL();
 	printHotKeys();
