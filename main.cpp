@@ -278,16 +278,26 @@ std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
   
   return rotatings;
 }
+std::vector <std::complex<float>> functionReturningSamples(){
+	std::vector<double> vectorOfNumbers = { 2.67,1.68,-0.39,-0.26,-0.8,-0.32,-0.97,-0.15,-0.23,0.22,-0.03,0.81,0,0.9,0.11,0.32,0.26,0.4,0.21,0.55
+,1.83, 3.25, 1.36, 3.23, 1.33, 3.45, -0.02, 0.16, 0.19, 0.32, 0.3, 0.4,1.88, 4.04, 2.16, 4.06, 2.3, 4.07,0.15, 0.01, 0.48, 0.03, 0.73, -0.13
+,3.39, 3.7, 3.53, 3.1, 3.35, 2.48,3.6, 1.72,3.3, 1.75,2.98, 2.09,2.59, 2.32,2.25l,0.41,-1.02,2.67, 1.68 };
+	std::vector<std::complex<float>> samples;
+	for (int i = 0; i < vectorOfNumbers.size() / 2; i++) {
+		samples.push_back(std::complex<float>(vectorOfNumbers[i], vectorOfNumbers[i + 1]));
+	}
+	return samples;
+}
 
 void renderLines() {
-
 	double  xpos, ypos;
 	getCurrentPosOfMouse(xpos, ypos);
 	std::complex<float> newPos(xpos, ypos);
-  std::vector<std::complex<float>> samples = {std::complex<float>(-2.0, 2.0), std::complex<float>(0, 2.0),
+  /*std::vector<std::complex<float>> samples = {std::complex<float>(-2.0, 2.0), std::complex<float>(0, 2.0),
 						std::complex<float>(2.0, 2.0),
 				std::complex<float>(2.0, 0.0), std::complex<float>(2.0, -2.0),
-				std::complex<float>(0.0, -2.0), std::complex<float>(-2.0, -2.0)};
+				std::complex<float>(0.0, -2.0), std::complex<float>(-2.0, -2.0)};*/
+	std::vector<std::complex<float>> samples = functionReturningSamples();
 
   std::vector<Rotating> rotatings = make_rotating(samples);
   
