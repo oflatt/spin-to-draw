@@ -159,10 +159,12 @@ struct State {
   float rotation;
   GLfloat g_modelViewMatrixState[16];
   std::complex<float> (*circleFunctionPointer)(float time);
-  
+
+  // state gets reset when click happens
   State() {
+    rotation = 0;
     mousePressed = false;
-    circleFunctionPointer = squareFunction;
+    circleFunctionPointer = circleFunction;
   }
 };
 
