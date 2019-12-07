@@ -329,7 +329,7 @@ void updateModelViewMatrix()
 
 	//state.time = abs(state.time - getTime());
 	float rotation = state.rotation;
-	if (lastThingStopped == "right") {
+	if (lastThingStopped == "left") {
 
 		g_modelViewMatrix[0] = cos(1 * rotation);
 		g_modelViewMatrix[2] = sin(1 * rotation);
@@ -345,7 +345,7 @@ void updateModelViewMatrix()
 		g_modelViewMatrix[10] = cos(1 * rotation);
 	}
 
-	if (teapotSpinRight) {
+	if (teapotSpinLeft) {
 		state.rotation = state.time * 2 * M_PI * rotation_rate;
 		float rotation = state.rotation;
 		g_modelViewMatrix[0] = cos(1 * rotation);
@@ -353,10 +353,10 @@ void updateModelViewMatrix()
 		g_modelViewMatrix[5] = 1;
 		g_modelViewMatrix[8] = sin(1 * rotation);
 		g_modelViewMatrix[10] = -cos(1 * rotation);
-		state.time = state.time + rotation_rate + 0.15;
+		state.time = state.time + 0.25;
 		//state.time = getTime()-state.time;
 	}
-	else if (teapotSpinLeft) {
+	else if (teapotSpinRight) {
 		state.rotation = (state.time * 2 * M_PI * rotation_rate);
 		float rotation = state.rotation;
 		g_modelViewMatrix[0] = cos(1 * rotation);
@@ -364,7 +364,7 @@ void updateModelViewMatrix()
 		g_modelViewMatrix[5] = 1;
 		g_modelViewMatrix[8] = sin(1 * rotation);
 		g_modelViewMatrix[10] = cos(1 * rotation);
-		state.time = state.time + rotation_rate + 0.15;
+		state.time = state.time  + 0.25;
 
 	}
 
