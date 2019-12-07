@@ -74,20 +74,23 @@ std::complex<float> circleFunction(float time) {
 // ap + bp(t) = cp(j) solved
 std::pair<bool, float> interceptLines(std::complex<float> point1, std::complex<float> point2, std::complex<float> point3, std::complex<float> point4) {
   float a = point1.real() - point3.real();
-  float b = point2.real()-point1.real();
-  float c = point4.real();
+  float b = point2.real() - point1.real(); // 1.0
+  float c = point4.real()- point3.real(); // 0.0
   float ap = point1.imag() - point3.imag();
-  float bp = point2.imag()-point1.imag();
-  float cp = point4.imag();
+  float bp = point2.imag()-point1.imag(); // 1.0
+  float cp = point4.imag() - point3.imag(); // -1.0
+  
+  
   if (c == 0.0) {
-	  if (b != 0.0) {
+	  if (b == 0.0) {
 		  return std::make_pair(false, 0.0);
 	  }
 	  else {
 		  return std::make_pair(true, -a / b);
 	  }
   }
-  if(bp-b*cp == 0.0) {
+  
+  if(c*bp - b*cp == 0.0) {
     return std::make_pair(false, 0.0);
   }
   float firstRes = c / (c*bp - b*cp);
@@ -123,7 +126,7 @@ std::vector<std::complex<float>> squareShapeVec = {std::complex<float>(-0.5, 0.5
 std::complex<float> squareFunction(float time) {
   
   time = std::fmod(time, 1);
-  float angle = M_PI * 2 * time;
+  float angle = -M_PI * 2 * time;
   return interceptAngle(angle, squareShapeVec);
 }
 
@@ -431,6 +434,7 @@ void renderLines() {
   for(Rotating r : state.rotatings) {
     std::complex<float> oldpos(currentpos);
     std::complex<float> vec = r.circleFunctionPointer(r.n * time + std::arg(r.coefficient)/(2.0 * M_PI));
+    
     vec *= std::abs(r.coefficient);
     currentpos += vec;
 
@@ -573,6 +577,8 @@ void printme(std::complex<float> a) {
 
 int main()
 {
+  std::cout << interceptLines(std::complex<float>(0,0), std::complex<float>(1.0,1.0),
+			      std::complex<float>(0.5,1.0), std::complex<float>(0.5,-1.0)).second << std::endl;
 	initWindow();
 	initGL();
 	printHotKeys();
