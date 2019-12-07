@@ -20,7 +20,7 @@ float modelHeight = ((float) g_windowHeight) / ((float) g_windowWidth);
 char* g_windowName = "HW3-3D-Basics";
 
 GLFWwindow* g_window;
-
+std::string lastThingStopped;
 // Model data
 std::vector<float> g_meshVertices;
 std::vector<float> g_meshNormals;
@@ -29,7 +29,8 @@ GLfloat g_modelViewMatrix[16];
 
 // Default options
 bool enablePersp = false;
-bool teapotSpin = false;
+bool teapotSpinLeft = false;
+bool teapotSpinRight = false;
 bool enableDolly = false;
 bool showCheckerboard = false;
 
@@ -43,7 +44,7 @@ float distance = initialDistance;
 
 // per second
 float rotation_rate = 0.025f;
-
+void renderDrawing();
 
 // these define the coordinate system
 // the model is stored centered around 0, 0 and stretching from -0.5 to 0.5 along both x and y axis
@@ -68,7 +69,9 @@ struct State {
   bool mousePressed;
   std::vector<std::complex<float>> samples;
   std::vector<Rotating> rotatings;
-
+  double time = 0;
+  float rotation;
+  GLfloat g_modelViewMatrixState[16];
   State() {
     mousePressed = false;
   }
@@ -179,14 +182,19 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
       if(action == GLFW_PRESS) {
 	state = State();
       } else {
+		  state.rotatings = make_rotating(state.samples);
 	// calculate vectors on release
-	state.rotatings = make_rotating(state.samples);
       }
 
       state.mousePressed = (action == GLFW_PRESS);
     }
 }
+void getCurrentPosOfMouse(double &xpos, double &ypos) {
+	//double xpos, ypos;
 
+	glfwGetCursorPos(g_window, &xpos, &ypos);
+	//std::cout << xpos << ypos << std::endl;
+}
 void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_action, int p_mods)
 {
   
@@ -194,13 +202,18 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
     {
       glfwSetWindowShouldClose(g_window, GL_TRUE);
     }
-  if (p_key == GLFW_KEY_P && p_action == GLFW_PRESS) {
+  if (p_key == GLFW_KEY_RIGHT && p_action == GLFW_PRESS) {
 
-    // Perspective Projection
-    enablePersp = true;
-    togglePerspective();
-    std::cout << "Perspective activated\n";
-
+	  // Toggle Spinning
+	  if (!teapotSpinRight) {
+		  std::cout << "Teapot spinning on\n";
+	  }
+	  else {
+		  lastThingStopped = "right";
+		  std::cout << "Teapot spinning off\n";
+	  }
+	  teapotSpinRight = !teapotSpinRight;
+	  teapotSpinLeft = false;
   }
   if (p_key == GLFW_KEY_O && p_action == GLFW_PRESS) {
 
@@ -210,17 +223,20 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
     std::cout << "Orthogonal activated\n";
 
   }
-  if (p_key == GLFW_KEY_S && p_action == GLFW_PRESS) {
+  if (p_key == GLFW_KEY_LEFT && p_action == GLFW_PRESS) {
 
     // Toggle Spinning
-    if (!teapotSpin) {
+    if (!teapotSpinLeft) {
       std::cout << "Teapot spinning on\n";
     }
     else {
+	  lastThingStopped = "left";
       std::cout << "Teapot spinning off\n";
     }
-    teapotSpin = !teapotSpin;
+    teapotSpinLeft = !teapotSpinLeft;
+	teapotSpinRight = false;
   }
+
   if (p_key == GLFW_KEY_D && p_action == GLFW_PRESS) {
 
     // Toggle dolly zoom
@@ -311,27 +327,52 @@ void updateModelViewMatrix()
 {
 	clearModelViewMatrix();
 
+	//state.time = abs(state.time - getTime());
+	float rotation = state.rotation;
+	if (lastThingStopped == "right") {
 
-	// You can use getTime() to change rotation over time
-	float rotation = getTime() * 2 * M_PI * rotation_rate;
-
-	g_modelViewMatrix[0] = 1.0f;
-	g_modelViewMatrix[5] = 1.0f;
-	g_modelViewMatrix[10] = 1.0f;
-
-	if (teapotSpin) {
-		// rotation matrix- keep the y axis
-		g_modelViewMatrix[0] = cos(rotation);
-		g_modelViewMatrix[2] = -sin(rotation);
-		g_modelViewMatrix[8] = -g_modelViewMatrix[2];
-		g_modelViewMatrix[10] = g_modelViewMatrix[0];
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = sin(1 * rotation);
+		g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = -cos(1 * rotation);
+	}
+	else {
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = -sin(1 * rotation);
+		g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = cos(1 * rotation);
 	}
 
+	if (teapotSpinRight) {
+		state.rotation = state.time * 2 * M_PI * rotation_rate;
+		float rotation = state.rotation;
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = sin(1 * rotation);
+		g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = -cos(1 * rotation);
+		state.time = state.time + rotation_rate + 0.15;
+		//state.time = getTime()-state.time;
+	}
+	else if (teapotSpinLeft) {
+		state.rotation = (state.time * 2 * M_PI * rotation_rate);
+		float rotation = state.rotation;
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = -sin(1 * rotation);
+		g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = cos(1 * rotation);
+		state.time = state.time + rotation_rate + 0.15;
+
+	}
 
 	g_modelViewMatrix[14] = -distance;
 	g_modelViewMatrix[15] = 1.0f;
-}
+	//state.time = abs(state.time - getTime());
 
+}
 void setModelViewMatrix()
 {
 	glMatrixMode(GL_MODELVIEW);
