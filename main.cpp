@@ -12,10 +12,15 @@
 
 #define M_PI 3.141592654f
 
+int granularity = 50;
+int start = -(granularity / 2);
+
+
 unsigned int g_windowWidth = 1000;
 unsigned int g_windowHeight = 800;
 float modelWidth = 1.0;
 float modelHeight = ((float) g_windowHeight) / ((float) g_windowWidth);
+float lineZStep = 0.5 / granularity;
 
 char* g_windowName = "HW3-3D-Basics";
 
@@ -48,8 +53,6 @@ float rotation_rate = 0.025f;
 void renderDrawing();
 
 const std::complex<float> complex_i(0, 1);
-int granularity = 50;
-int start = -(granularity / 2);
 
 // these define the coordinate system
 // the model is stored centered around 0, 0 and stretching from -0.5 to 0.5 along both x and y axis
@@ -376,7 +379,7 @@ void initGL()
 {
   glClearColor(1.f, 1.f, 1.f, 1.0f);
 
-  glEnable(GL_LIGHTING);
+  //glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_DEPTH_TEST);
   glShadeModel(GL_SMOOTH);
@@ -462,7 +465,7 @@ void setModelViewMatrix()
 void renderLines() {
   
 
-  glDisable(GL_LIGHTING);
+  
 
   glColor3f(0, 0, 0);
   glLineWidth(3);
@@ -471,7 +474,9 @@ void renderLines() {
   float time = getTime() * 2 * M_PI * rotation_rate;
   std::complex<float> currentpos(0, 0);
 
+  int i = 0;
   for(Rotating r : state.rotatings) {
+    
     std::complex<float> oldpos(currentpos);
     std::complex<float> vec = r.coefficient * r.circleFunctionPointer(r.n * time);
     
@@ -480,18 +485,17 @@ void renderLines() {
 
     std::complex<float> oldposScreen = model_to_screen(oldpos);
     std::complex<float> currentposScreen = model_to_screen(currentpos);
-    glVertex3f(oldposScreen.real(), oldposScreen.imag(), 0);
-    glVertex3f(currentposScreen.real(), currentposScreen.imag(), 0);
+    glVertex3f(oldposScreen.real(), oldposScreen.imag(), -((int) state.rotatings.size()-i)*lineZStep);
+    glVertex3f(currentposScreen.real(), currentposScreen.imag(), -((int) state.rotatings.size()-i)*lineZStep + lineZStep);
+    i++;
   }
 
   glEnd();
 
-  glEnable(GL_LIGHTING);
 }
 
 
 void renderDrawing() {
-  glDisable(GL_LIGHTING);
 
   glColor3f(0, 0, 0);
   glLineWidth(3);
@@ -511,8 +515,6 @@ void renderDrawing() {
   }
   
   glEnd();
-
-  glEnable(GL_LIGHTING);
 }
 
 void drawCheckerBoard() {
