@@ -105,12 +105,15 @@ std::complex<float> interceptAngle(float angle, std::vector<std::complex<float>>
     if(i == 0) {
       lastIndex = shapeVec.size()-1;
     }
+    std::complex<float> point1 = std::complex<float>(0, 0);
     std::complex<float> point2 = std::exp(complex_i * angle);
     std::complex<float> point3 = shapeVec[lastIndex];
     std::complex<float> point4 = shapeVec[i];
-    std::pair<bool, float> intercept = interceptLines(std::complex<float>(0,0), point2, point3, point4);
-    if(intercept.first && intercept.second <= 1 && intercept.second >= 0) {
-      return intercept.second * point2;
+    //std::float mag = std::abs(point4 - point3);
+    std::pair<bool, float> intercept = interceptLines(point3, point4, point1, point2);
+    std::pair<bool, float> intercept2 = interceptLines(point1, point2, point3, point4);
+    if(intercept.first && intercept.second <= 1.0  && intercept.second >= 0 && intercept2.second >= 0) {
+      return intercept.second * (point4 - point3) + point3;
     }
   }
   // this should not happen
@@ -119,10 +122,11 @@ std::complex<float> interceptAngle(float angle, std::vector<std::complex<float>>
   
 }
 
-std::vector<std::complex<float>> squareShapeVec = {std::complex<float>(-0.5, 0.5),
-						   std::complex<float>(0.5, 0.5),
-						   std::complex<float>(0.5, -0.5),
-						   std::complex<float>(-0.5, -0.5)};
+float squareSize = 1.0;
+std::vector<std::complex<float>> squareShapeVec = {std::complex<float>(-squareSize, squareSize),
+						   std::complex<float>(squareSize, squareSize),
+						   std::complex<float>(squareSize, -squareSize),
+						   std::complex<float>(-squareSize, -squareSize)};
 std::complex<float> squareFunction(float time) {
   
   time = std::fmod(time, 1);
@@ -152,7 +156,7 @@ struct State {
 
   State() {
     mousePressed = false;
-    circleFunctionPointer = circleFunction;
+    circleFunctionPointer = squareFunction;
   }
 };
 
@@ -433,9 +437,9 @@ void renderLines() {
 
   for(Rotating r : state.rotatings) {
     std::complex<float> oldpos(currentpos);
-    std::complex<float> vec = r.circleFunctionPointer(r.n * time + std::arg(r.coefficient)/(2.0 * M_PI));
+    std::complex<float> vec = r.coefficient * r.circleFunctionPointer(r.n * time);
     
-    vec *= std::abs(r.coefficient);
+    //vec *= std::abs(r.coefficient);
     currentpos += vec;
 
     std::complex<float> oldposScreen = model_to_screen(oldpos);
@@ -577,7 +581,7 @@ void printme(std::complex<float> a) {
 
 int main()
 {
-  std::cout << interceptLines(std::complex<float>(0,0), std::complex<float>(1.0,1.0),
+  std::cout << interceptLines(std::complex<float>(0,0), std::complex<float>(-1.0,0.0),
 			      std::complex<float>(0.5,1.0), std::complex<float>(0.5,-1.0)).second << std::endl;
 	initWindow();
 	initGL();
