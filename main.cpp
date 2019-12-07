@@ -31,7 +31,7 @@ GLfloat g_modelViewMatrix[16];
 bool enablePersp = false;
 bool teapotSpinLeft = false;
 bool teapotSpinRight = false;
-bool enableDolly = false;
+
 bool showCheckerboard = false;
 
 // Dolly zoom options 
@@ -285,18 +285,25 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
     {
       glfwSetWindowShouldClose(g_window, GL_TRUE);
     }
-  if (p_key == GLFW_KEY_RIGHT && p_action == GLFW_PRESS) {
-
+  if (p_key == GLFW_KEY_RIGHT) {
+    if(p_action == GLFW_PRESS) {
 	  // Toggle Spinning
 	  if (!teapotSpinRight) {
 		  std::cout << "Teapot spinning on\n";
+		  teapotSpinRight = true;
 	  }
-	  else {
-		  lastThingStopped = "right";
-		  std::cout << "Teapot spinning off\n";
+	  if(teapotSpinLeft) {
+	    lastThingStopped = "left";
+	    teapotSpinLeft = false;
 	  }
-	  teapotSpinRight = !teapotSpinRight;
-	  teapotSpinLeft = false;
+	  
+    } else if(p_action == GLFW_RELEASE) {
+      if(teapotSpinRight) {
+	teapotSpinRight = false;
+	lastThingStopped = "right";
+	std::cout << "Teapot spinning off\n";
+      }
+    }
   }
   if (p_key == GLFW_KEY_O && p_action == GLFW_PRESS) {
 
@@ -306,32 +313,28 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
     std::cout << "Orthogonal activated\n";
 
   }
-  if (p_key == GLFW_KEY_LEFT && p_action == GLFW_PRESS) {
-
-    // Toggle Spinning
-    if (!teapotSpinLeft) {
-      std::cout << "Teapot spinning on\n";
-    }
-    else {
-	  lastThingStopped = "left";
-      std::cout << "Teapot spinning off\n";
-    }
-    teapotSpinLeft = !teapotSpinLeft;
-	teapotSpinRight = false;
-  }
-
-  if (p_key == GLFW_KEY_D && p_action == GLFW_PRESS) {
-
-    // Toggle dolly zoom
-    if (!enableDolly)
-      {
-	std::cout << "Dolly zoom on\n";
+  
+  if (p_key == GLFW_KEY_LEFT) {
+    if(p_action == GLFW_PRESS) {
+	  // Toggle Spinning
+	  if (!teapotSpinLeft) {
+		  std::cout << "Teapot spinning on\n";
+		  teapotSpinLeft = true;
+	  }
+	  if(teapotSpinRight) {
+	    lastThingStopped = "right";
+	    teapotSpinRight = false;
+	  }
+	  
+    } else if(p_action == GLFW_RELEASE) {
+      if(teapotSpinLeft) {
+	teapotSpinLeft = false;
+	lastThingStopped = "left";
+	std::cout << "Teapot spinning off\n";
       }
-    else {
-      std::cout << "Dolly zoom off\n";
     }
-    enableDolly = !enableDolly;
   }
+
   if (p_key == GLFW_KEY_C && p_action == GLFW_PRESS) {
 
     // Show/hide Checkerboard
