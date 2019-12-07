@@ -48,7 +48,7 @@ float rotation_rate = 0.025f;
 void renderDrawing();
 
 const std::complex<float> complex_i(0, 1);
-int granularity = 20;
+int granularity = 50;
 int start = -(granularity / 2);
 
 // these define the coordinate system
@@ -179,7 +179,9 @@ std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
     std::complex<float> c(0, 0);
     for(int samplei = 0; samplei < samples.size(); samplei++) {
       float t = ((float) samplei) / ((float) samples.size());
-      c += samples[samplei] * state.circleFunctionPointer(-n * t);
+      std::complex<float> circleInverse =  std::conj(state.circleFunctionPointer(-n * t));
+      circleInverse *= 1.0/std::abs(circleInverse);
+      c += samples[samplei] * circleInverse;
     }
     c /= ((float) samples.size());
     Rotating r(n, c);
@@ -263,7 +265,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
       // reset state on button press
       if(action == GLFW_PRESS) {
-	state = State();
+	State newState;
+	newState.circleFunctionPointer = state.circleFunctionPointer;
+	state = newState;
+	
       } else {
 		  state.rotatings = make_rotating(state.samples);
 	// calculate vectors on release
@@ -305,14 +310,6 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
       }
     }
   }
-  if (p_key == GLFW_KEY_O && p_action == GLFW_PRESS) {
-
-    // Orthographic Projection
-    enablePersp = false;
-    togglePerspective();
-    std::cout << "Orthogonal activated\n";
-
-  }
   
   if (p_key == GLFW_KEY_LEFT) {
     if(p_action == GLFW_PRESS) {
@@ -335,17 +332,14 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
     }
   }
 
-  if (p_key == GLFW_KEY_C && p_action == GLFW_PRESS) {
-
-    // Show/hide Checkerboard
-    if (!showCheckerboard)
-      {
-	std::cout << "Show checkerboard\n";
-      }
-    else {
-      std::cout << "Hide checkerboard\n";
+  if(p_key == GLFW_KEY_S && p_action == GLFW_PRESS) {
+    if(state.circleFunctionPointer == circleFunction) {
+      std::cout << "Switching to square shape";
+      state.circleFunctionPointer = squareFunction;
+    } else {
+      std::cout << "Switching to circle shape";
+      state.circleFunctionPointer = circleFunction;
     }
-    showCheckerboard = !showCheckerboard;
   }
 }
 
@@ -389,12 +383,10 @@ void initGL()
 }
 
 void printHotKeys() {
-	std::cout << "\nHot Keys..\n"
-		<< "Orthogonal Projection:  O\n"
-		<< "Perspective Projection: P\n"
-		<< "Toggle Spinning:        S\n"
-		<< "Toggle Dolly Zoom:      D\n"
-		<< "Show/hide Checkerboard: C\n"
+	std::cout << "\nControls\n"
+		  << "Click and drag to draw a shape\n"
+		  << "Spin using left/right arrow keys\n"
+		<< "Change the shape of the vector rotation (circle or square fourier transform)\n"
 		<< "Exit:                   Esc\n\n";
 }
 
