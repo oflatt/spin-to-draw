@@ -586,6 +586,5 @@ int main()
 {
 	initWindow();
 	initGL();
-	printHotKeys();
 	renderLoop();
 }
