@@ -325,7 +325,7 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
 			teapotSpinLeft = false;
 		}
 		if (!teapotSpinRight) {
-		  std::cout << "Teapot Right spinning on\n";
+		  std::cout << "Spinning Right\n";
 		  teapotSpinRight = true;
 		}
 	  
@@ -334,12 +334,10 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
       if(teapotSpinRight) {
 		teapotSpinRight = false;
 		lastThingStopped = "right";
-		std::cout << "Spinning Right\n";
       }
 	  if (teapotSpinLeft) {
 		  teapotSpinLeft = false;
 		  lastThingStopped = "left";
-		  std::cout << "Spinning Left\n";
 	  }
     }
   }
@@ -379,7 +377,7 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
 			teapotSpinRight = false;
 		}
 		if (!teapotSpinLeft) {
-		  std::cout << "Teapot spinning on\n";
+		  std::cout << "Spinning Left\n";
 		  teapotSpinLeft = true;
 		}
 	  
@@ -392,7 +390,6 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
 	  if (teapotSpinRight) {
 		  teapotSpinRight = false;
 		  lastThingStopped = "right";
-		  std::cout << "Teapot spinning off\n";
 	  }
     }
   }
