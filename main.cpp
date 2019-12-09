@@ -38,6 +38,8 @@ bool teapotSpinLeft = false;
 bool teapotSpinRight = false;
 bool zoomIn = false;
 bool zoomOut = false;
+bool goingUp = false;
+
 
 bool showCheckerboard = false;
 
@@ -72,7 +74,6 @@ std::complex<float> mouse_to_model(double mouseX, double mouseY) {
 std::complex<float> circleFunction(float time) {
   return std::exp(M_PI * 2 * complex_i * time);
 }
-
 
 // lines specified by two points each
 // returns a float that is the magnitude to multiply point2-point1 by
@@ -269,19 +270,21 @@ void togglePerspective() {
 
 void zoom() {
 	if (zoomOut) {
-		std::cout << "isthiswork" << std::endl;
 		float distance1 = -distance;
 		distance = distance + 0.001;
-		g_modelViewMatrix[14] = distance1;
-		
+		g_modelViewMatrix[14] = distance1;	
 	}
 	else if (zoomIn) {
-		std::cout << "isthiswork" << std::endl;
 		float distance1 = -distance;
-		distance = distance - 0.001;
+		if (distance > 0.001) {
+			distance = distance - 0.001;
+		}
 		g_modelViewMatrix[14] = distance1;
-
 	}
+	for (int i = 0; i < 16; i++) {
+		state.g_modelViewMatrixState[i] = g_modelViewMatrix[i];
+	}
+	
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -331,22 +334,42 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
       if(teapotSpinRight) {
 		teapotSpinRight = false;
 		lastThingStopped = "right";
-		std::cout << "Teapot spinning off\n";
+		std::cout << "Spinning Right\n";
       }
 	  if (teapotSpinLeft) {
 		  teapotSpinLeft = false;
 		  lastThingStopped = "left";
-		  std::cout << "Teapot spinning off\n";
+		  std::cout << "Spinning Left\n";
 	  }
     }
   }
   if (p_key == GLFW_KEY_UP) {
-	  zoomIn = !zoomIn;
+	  if (zoomIn) {
+		  zoomIn = false;
+	  }
+	  else {
+		  zoomIn = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  zoomIn = false;
+	  }
 	  zoomOut = false;
   }
   if (p_key == GLFW_KEY_DOWN) {
-	  zoomOut = !zoomOut;
+	  
+	  if (zoomOut) {
+		  zoomOut = false;
+	  }
+	  else {
+		  zoomOut = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  zoomOut = false;
+	  }
 	  zoomIn = false;
+  }
+  if (p_key == GLFW_KEY_W) {
+	  goingUp = !goingUp;
   }
   if (p_key == GLFW_KEY_LEFT) {
     if(p_action == GLFW_PRESS) {
@@ -498,6 +521,7 @@ void setModelViewMatrix()
 	glMatrixMode(GL_MODELVIEW);
 	updateModelViewMatrix();
 	zoom();
+	
 	glLoadMatrixf(g_modelViewMatrix);
 }
 
