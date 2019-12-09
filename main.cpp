@@ -21,7 +21,7 @@ unsigned int g_windowHeight = 800;
 float modelWidth = 1.0;
 float modelHeight = ((float) g_windowHeight) / ((float) g_windowWidth);
 float lineZStep = 0.5 / granularity;
-
+float number = 1;
 char* g_windowName = "HW3-3D-Basics";
 
 GLFWwindow* g_window;
@@ -39,7 +39,9 @@ bool teapotSpinRight = false;
 bool zoomIn = false;
 bool zoomOut = false;
 bool goingUp = false;
-
+bool goingDown = false;
+bool goingLeft = false;
+bool goingRight = false;
 
 bool showCheckerboard = false;
 
@@ -310,6 +312,53 @@ void getCurrentPosOfMouse(double &xpos, double &ypos) {
 	glfwGetCursorPos(g_window, &xpos, &ypos);
 	//std::cout << xpos << ypos << std::endl;
 }
+void goingUpFunc() {
+	if (goingUp) {
+		std::cout << g_modelViewMatrix[5] << std::endl;
+		number = number + 0.01;
+		std::cout << number << std::endl;
+		for (int i = 1; i < 16; i+=2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] -= 0.001;
+			}
+			
+		}
+	}
+	else if (goingDown) {
+		std::cout << g_modelViewMatrix[5] << std::endl;
+		number = number + 0.01;
+		std::cout << number << std::endl;
+		for (int i = 1; i < 16; i += 2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] += 0.001;
+			}
+
+		}
+	}
+	else if (goingRight) {
+		std::cout << g_modelViewMatrix[5] << std::endl;
+		number = number + 0.01;
+		std::cout << number << std::endl;
+		for (int i = 0; i < 16; i += 2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] -= 0.001;
+			}
+
+		}
+	}
+	else if (goingLeft) {
+		std::cout << g_modelViewMatrix[5] << std::endl;
+		number = number + 0.01;
+		std::cout << number << std::endl;
+		for (int i = 0; i < 16; i += 2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] += 0.001;
+			}
+
+		}
+	}
+	
+}
 void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_action, int p_mods)
 {
   
@@ -367,7 +416,52 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
 	  zoomIn = false;
   }
   if (p_key == GLFW_KEY_W) {
-	  goingUp = !goingUp;
+	  if (goingUp) {
+		  goingUp = false;
+	  }
+	  else {
+		  goingUp = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingUp = false;
+	  }
+	  goingDown = false;
+  }
+  if (p_key == GLFW_KEY_S) {
+	  if (goingDown) {
+		  goingDown = false;
+	  }
+	  else {
+		  goingDown = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingDown = false;
+	  }
+	  goingUp = false;
+  }
+  if (p_key == GLFW_KEY_A) {
+	  if (goingLeft) {
+		  goingLeft = false;
+	  }
+	  else {
+		  goingLeft = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingLeft = false;
+	  }
+	  goingRight = false;
+  }
+  if (p_key == GLFW_KEY_D) {
+	  if (goingRight) {
+		  goingRight = false;
+	  }
+	  else {
+		  goingRight = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingRight = false;
+	  }
+	  goingLeft = false;
   }
   if (p_key == GLFW_KEY_LEFT) {
     if(p_action == GLFW_PRESS) {
@@ -458,29 +552,32 @@ void clearModelViewMatrix()
 	{
 		for (int j = 0; j < 4; ++j)
 		{
-			g_modelViewMatrix[4 * i + j] = 0.0f;
+			if ((4 * i + j) != 5.0) {
+				g_modelViewMatrix[4 * i + j] = 0.0f;
+			}
+			
 		}
 	}
 }
 
 void updateModelViewMatrix()
 {
-	clearModelViewMatrix();
-
+	//clearModelViewMatrix();
+	
 	//state.time = abs(state.time - getTime());
 	float rotation = state.rotation;
 	if (lastThingStopped == "left") {
 
 		g_modelViewMatrix[0] = cos(1 * rotation);
 		g_modelViewMatrix[2] = sin(1 * rotation);
-		g_modelViewMatrix[5] = 1;
+		//g_modelViewMatrix[5] = 1;
 		g_modelViewMatrix[8] = sin(1 * rotation);
 		g_modelViewMatrix[10] = -cos(1 * rotation);
 	}
 	else {
 		g_modelViewMatrix[0] = cos(1 * rotation);
 		g_modelViewMatrix[2] = -sin(1 * rotation);
-		g_modelViewMatrix[5] = 1;
+		//g_modelViewMatrix[5] = 1;
 		g_modelViewMatrix[8] = sin(1 * rotation);
 		g_modelViewMatrix[10] = cos(1 * rotation);
 	}
@@ -490,7 +587,7 @@ void updateModelViewMatrix()
 		float rotation = state.rotation;
 		g_modelViewMatrix[0] = cos(1 * rotation);
 		g_modelViewMatrix[2] = sin(1 * rotation);
-		g_modelViewMatrix[5] = 1;
+		//g_modelViewMatrix[5] = 1;
 		g_modelViewMatrix[8] = sin(1 * rotation);
 		g_modelViewMatrix[10] = -cos(1 * rotation);
 		state.time = state.time + 0.25;
@@ -501,7 +598,7 @@ void updateModelViewMatrix()
 		float rotation = state.rotation;
 		g_modelViewMatrix[0] = cos(1 * rotation);
 		g_modelViewMatrix[2] = -sin(1 * rotation);
-		g_modelViewMatrix[5] = 1;
+		//g_modelViewMatrix[5] = 1;
 		g_modelViewMatrix[8] = sin(1 * rotation);
 		g_modelViewMatrix[10] = cos(1 * rotation);
 		state.time = state.time  + 0.25;
@@ -518,7 +615,7 @@ void setModelViewMatrix()
 	glMatrixMode(GL_MODELVIEW);
 	updateModelViewMatrix();
 	zoom();
-	
+	goingUpFunc();
 	glLoadMatrixf(g_modelViewMatrix);
 }
 
@@ -616,7 +713,7 @@ void renderCheckerBoard() {
 
 	g_modelViewMatrix[0] = 1;
 	g_modelViewMatrix[2] = 0;
-	g_modelViewMatrix[5] = 1;
+	//g_modelViewMatrix[5] = 1;
 	g_modelViewMatrix[8] = 0;
 	g_modelViewMatrix[10] = 1;
 	g_modelViewMatrix[14] = -distance;
@@ -682,6 +779,7 @@ int main()
 {
   std::cout << interceptLines(std::complex<float>(0,0), std::complex<float>(-1.0,0.0),
 			      std::complex<float>(0.5,1.0), std::complex<float>(0.5,-1.0)).second << std::endl;
+	g_modelViewMatrix[5] = 1;
 	initWindow();
 	initGL();
 	printHotKeys();
