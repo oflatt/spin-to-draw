@@ -314,48 +314,39 @@ void getCurrentPosOfMouse(double &xpos, double &ypos) {
 }
 void goingUpFunc() {
 	if (goingUp) {
-		std::cout << g_modelViewMatrix[5] << std::endl;
 		number = number + 0.01;
-		std::cout << number << std::endl;
 		for (int i = 1; i < 16; i+=2) {
 			if (i != 5) {
 				g_modelViewMatrix[i] -= 0.001;
 			}
-			
 		}
 	}
 	else if (goingDown) {
-		std::cout << g_modelViewMatrix[5] << std::endl;
 		number = number + 0.01;
-		std::cout << number << std::endl;
 		for (int i = 1; i < 16; i += 2) {
 			if (i != 5) {
 				g_modelViewMatrix[i] += 0.001;
 			}
-
 		}
 	}
-	else if (goingRight) {
-		std::cout << g_modelViewMatrix[5] << std::endl;
-		number = number + 0.01;
-		std::cout << number << std::endl;
+	else if (goingRight) {	
+		number = number + 0.01;	
 		for (int i = 0; i < 16; i += 2) {
 			if (i != 5) {
 				g_modelViewMatrix[i] -= 0.001;
 			}
-
 		}
 	}
 	else if (goingLeft) {
-		std::cout << g_modelViewMatrix[5] << std::endl;
 		number = number + 0.01;
-		std::cout << number << std::endl;
 		for (int i = 0; i < 16; i += 2) {
 			if (i != 5) {
 				g_modelViewMatrix[i] += 0.001;
 			}
-
 		}
+	}
+	for (int i = 0; i < 16; i++) {
+		state.g_modelViewMatrixState[i] = g_modelViewMatrix[i];
 	}
 	
 }
@@ -542,6 +533,9 @@ void printHotKeys() {
 	std::cout << "\nControls\n"
 		  << "Click and drag to draw a shape\n"
 		  << "Spin using left/right arrow keys\n"
+		<< "Zoom using the up/down arrow keys\n"
+		<< "Move the camera up, down, left or right with WASD Keys (it's reversed if you think about it as moving\n"
+		<< "   the figure up, down, left or right)/n"
 		<< "Change the shape of the vector rotation (circle or square fourier transform)\n"
 		<< "Exit:                   Esc\n\n";
 }
