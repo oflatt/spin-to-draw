@@ -36,6 +36,8 @@ GLfloat g_modelViewMatrix[16];
 bool enablePersp = false;
 bool teapotSpinLeft = false;
 bool teapotSpinRight = false;
+bool zoomIn = false;
+bool zoomOut = false;
 
 bool showCheckerboard = false;
 
@@ -265,6 +267,23 @@ void togglePerspective() {
 	}
 }
 
+void zoom() {
+	if (zoomOut) {
+		std::cout << "isthiswork" << std::endl;
+		float distance1 = -distance;
+		distance = distance + 0.001;
+		g_modelViewMatrix[14] = distance1;
+		
+	}
+	else if (zoomIn) {
+		std::cout << "isthiswork" << std::endl;
+		float distance1 = -distance;
+		distance = distance - 0.001;
+		g_modelViewMatrix[14] = distance1;
+
+	}
+}
+
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
   if(button == GLFW_MOUSE_BUTTON_LEFT) 
     {
@@ -321,7 +340,14 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
 	  }
     }
   }
-  
+  if (p_key == GLFW_KEY_UP) {
+	  zoomIn = !zoomIn;
+	  zoomOut = false;
+  }
+  if (p_key == GLFW_KEY_DOWN) {
+	  zoomOut = !zoomOut;
+	  zoomIn = false;
+  }
   if (p_key == GLFW_KEY_LEFT) {
     if(p_action == GLFW_PRESS) {
 	  // Toggle Spinning
@@ -471,6 +497,7 @@ void setModelViewMatrix()
 {
 	glMatrixMode(GL_MODELVIEW);
 	updateModelViewMatrix();
+	zoom();
 	glLoadMatrixf(g_modelViewMatrix);
 }
 
