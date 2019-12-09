@@ -12,15 +12,20 @@
 
 #define M_PI 3.141592654f
 
+int granularity = 50;
+int start = -(granularity / 2);
+
+
 unsigned int g_windowWidth = 1000;
 unsigned int g_windowHeight = 800;
 float modelWidth = 1.0;
 float modelHeight = ((float) g_windowHeight) / ((float) g_windowWidth);
-
+float lineZStep = 0.5 / granularity;
+float number = 1;
 char* g_windowName = "HW3-3D-Basics";
 
 GLFWwindow* g_window;
-
+std::string lastThingStopped;
 // Model data
 std::vector<float> g_meshVertices;
 std::vector<float> g_meshNormals;
@@ -29,8 +34,15 @@ GLfloat g_modelViewMatrix[16];
 
 // Default options
 bool enablePersp = false;
-bool teapotSpin = false;
-bool enableDolly = false;
+bool teapotSpinLeft = false;
+bool teapotSpinRight = false;
+bool zoomIn = false;
+bool zoomOut = false;
+bool goingUp = false;
+bool goingDown = false;
+bool goingLeft = false;
+bool goingRight = false;
+
 bool showCheckerboard = false;
 
 // Dolly zoom options 
@@ -44,11 +56,9 @@ float distance = initialDistance;
 // per second
 float rotation_rate = 0.025f;
 
+void renderDrawing();
+
 const std::complex<float> complex_i(0, 1);
-int granularity = 20;
-int start = -(granularity / 2);
-
-
 
 // these define the coordinate system
 // the model is stored centered around 0, 0 and stretching from -0.5 to 0.5 along both x and y axis
@@ -66,7 +76,6 @@ std::complex<float> mouse_to_model(double mouseX, double mouseY) {
 std::complex<float> circleFunction(float time) {
   return std::exp(M_PI * 2 * complex_i * time);
 }
-
 
 // lines specified by two points each
 // returns a float that is the magnitude to multiply point2-point1 by
@@ -151,12 +160,16 @@ struct State {
   bool mousePressed;
   std::vector<std::complex<float>> samples;
   std::vector<Rotating> rotatings;
+  double time = 0;
+  float rotation;
+  GLfloat g_modelViewMatrixState[16];
   std::complex<float> (*circleFunctionPointer)(float time);
-  
 
+  // state gets reset when click happens
   State() {
+    rotation = 0;
     mousePressed = false;
-    circleFunctionPointer = squareFunction;
+    circleFunctionPointer = circleFunction;
   }
 };
 
@@ -176,7 +189,9 @@ std::vector<Rotating> make_rotating(std::vector<std::complex<float>>& samples) {
     std::complex<float> c(0, 0);
     for(int samplei = 0; samplei < samples.size(); samplei++) {
       float t = ((float) samplei) / ((float) samples.size());
-      c += samples[samplei] * state.circleFunctionPointer(-n * t);
+      std::complex<float> circleInverse =  std::conj(state.circleFunctionPointer(-n * t));
+      circleInverse *= 1.0/std::abs(circleInverse);
+      c += samples[samplei] * circleInverse;
     }
     c /= ((float) samples.size());
     Rotating r(n, c);
@@ -255,21 +270,86 @@ void togglePerspective() {
 	}
 }
 
+void zoom() {
+	if (zoomOut) {
+		float distance1 = -distance;
+		distance = distance + 0.001;
+		g_modelViewMatrix[14] = distance1;	
+	}
+	else if (zoomIn) {
+		float distance1 = -distance;
+		if (distance > 0.001) {
+			distance = distance - 0.001;
+		}
+		g_modelViewMatrix[14] = distance1;
+	}
+	for (int i = 0; i < 16; i++) {
+		state.g_modelViewMatrixState[i] = g_modelViewMatrix[i];
+	}
+	
+}
+
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
   if(button == GLFW_MOUSE_BUTTON_LEFT) 
     {
       // reset state on button press
       if(action == GLFW_PRESS) {
-	state = State();
+	State newState;
+	newState.circleFunctionPointer = state.circleFunctionPointer;
+	state = newState;
+	
       } else {
+		  state.rotatings = make_rotating(state.samples);
 	// calculate vectors on release
-	state.rotatings = make_rotating(state.samples);
       }
 
       state.mousePressed = (action == GLFW_PRESS);
     }
 }
+void getCurrentPosOfMouse(double &xpos, double &ypos) {
+	//double xpos, ypos;
 
+	glfwGetCursorPos(g_window, &xpos, &ypos);
+	//std::cout << xpos << ypos << std::endl;
+}
+void goingUpFunc() {
+	if (goingUp) {
+		number = number + 0.01;
+		for (int i = 1; i < 16; i+=2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] -= 0.001;
+			}
+		}
+	}
+	else if (goingDown) {
+		number = number + 0.01;
+		for (int i = 1; i < 16; i += 2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] += 0.001;
+			}
+		}
+	}
+	else if (goingRight) {	
+		number = number + 0.01;	
+		for (int i = 0; i < 16; i += 2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] -= 0.001;
+			}
+		}
+	}
+	else if (goingLeft) {
+		number = number + 0.01;
+		for (int i = 0; i < 16; i += 2) {
+			if (i != 5) {
+				g_modelViewMatrix[i] += 0.001;
+			}
+		}
+	}
+	for (int i = 0; i < 16; i++) {
+		state.g_modelViewMatrixState[i] = g_modelViewMatrix[i];
+	}
+	
+}
 void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_action, int p_mods)
 {
   
@@ -277,56 +357,136 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
     {
       glfwSetWindowShouldClose(g_window, GL_TRUE);
     }
-  if (p_key == GLFW_KEY_P && p_action == GLFW_PRESS) {
-
-    // Perspective Projection
-    enablePersp = true;
-    togglePerspective();
-    std::cout << "Perspective activated\n";
-
-  }
-  if (p_key == GLFW_KEY_O && p_action == GLFW_PRESS) {
-
-    // Orthographic Projection
-    enablePersp = false;
-    togglePerspective();
-    std::cout << "Orthogonal activated\n";
-
-  }
-  if (p_key == GLFW_KEY_S && p_action == GLFW_PRESS) {
-
-    // Toggle Spinning
-    if (!teapotSpin) {
-      std::cout << "Teapot spinning on\n";
-    }
-    else {
-      std::cout << "Teapot spinning off\n";
-    }
-    teapotSpin = !teapotSpin;
-  }
-  if (p_key == GLFW_KEY_D && p_action == GLFW_PRESS) {
-
-    // Toggle dolly zoom
-    if (!enableDolly)
-      {
-	std::cout << "Dolly zoom on\n";
+  if (p_key == GLFW_KEY_RIGHT) {
+    if(p_action == GLFW_PRESS) {
+	  // Toggle Spinning
+		if (teapotSpinLeft) {
+			lastThingStopped = "left";
+			teapotSpinLeft = false;
+		}
+		if (!teapotSpinRight) {
+		  std::cout << "Spinning Right\n";
+		  teapotSpinRight = true;
+		}
+	  
+	  
+    } else if(p_action == GLFW_RELEASE) {
+      if(teapotSpinRight) {
+		teapotSpinRight = false;
+		lastThingStopped = "right";
       }
-    else {
-      std::cout << "Dolly zoom off\n";
+	  if (teapotSpinLeft) {
+		  teapotSpinLeft = false;
+		  lastThingStopped = "left";
+	  }
     }
-    enableDolly = !enableDolly;
   }
-  if (p_key == GLFW_KEY_C && p_action == GLFW_PRESS) {
-
-    // Show/hide Checkerboard
-    if (!showCheckerboard)
-      {
-	std::cout << "Show checkerboard\n";
+  if (p_key == GLFW_KEY_UP) {
+	  if (zoomIn) {
+		  zoomIn = false;
+	  }
+	  else {
+		  zoomIn = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  zoomIn = false;
+	  }
+	  zoomOut = false;
+  }
+  if (p_key == GLFW_KEY_DOWN) {
+	  
+	  if (zoomOut) {
+		  zoomOut = false;
+	  }
+	  else {
+		  zoomOut = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  zoomOut = false;
+	  }
+	  zoomIn = false;
+  }
+  if (p_key == GLFW_KEY_W) {
+	  if (goingUp) {
+		  goingUp = false;
+	  }
+	  else {
+		  goingUp = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingUp = false;
+	  }
+	  goingDown = false;
+  }
+  if (p_key == GLFW_KEY_S) {
+	  if (goingDown) {
+		  goingDown = false;
+	  }
+	  else {
+		  goingDown = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingDown = false;
+	  }
+	  goingUp = false;
+  }
+  if (p_key == GLFW_KEY_A) {
+	  if (goingLeft) {
+		  goingLeft = false;
+	  }
+	  else {
+		  goingLeft = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingLeft = false;
+	  }
+	  goingRight = false;
+  }
+  if (p_key == GLFW_KEY_D) {
+	  if (goingRight) {
+		  goingRight = false;
+	  }
+	  else {
+		  goingRight = true;
+	  }
+	  if (p_action == GLFW_RELEASE) {
+		  goingRight = false;
+	  }
+	  goingLeft = false;
+  }
+  if (p_key == GLFW_KEY_LEFT) {
+    if(p_action == GLFW_PRESS) {
+	  // Toggle Spinning
+		if (teapotSpinRight) {
+			lastThingStopped = "right";
+			teapotSpinRight = false;
+		}
+		if (!teapotSpinLeft) {
+		  std::cout << "Spinning Left\n";
+		  teapotSpinLeft = true;
+		}
+	  
+    } else if(p_action == GLFW_RELEASE) {
+      if(teapotSpinLeft) {
+		teapotSpinLeft = false;
+		lastThingStopped = "left";
+		std::cout << "Teapot spinning off\n";
       }
-    else {
-      std::cout << "Hide checkerboard\n";
+	  if (teapotSpinRight) {
+		  teapotSpinRight = false;
+		  lastThingStopped = "right";
+	  }
     }
-    showCheckerboard = !showCheckerboard;
+  }
+
+  if(p_key == GLFW_KEY_S && p_action == GLFW_PRESS) {
+    if(state.circleFunctionPointer == circleFunction) {
+      std::cout << "Switching to square shape";
+      state.circleFunctionPointer = squareFunction;
+    } else {
+      std::cout << "Switching to circle shape";
+      state.circleFunctionPointer = circleFunction;
+    }
   }
 }
 
@@ -363,19 +523,20 @@ void initGL()
 {
   glClearColor(1.f, 1.f, 1.f, 1.0f);
 
-  glEnable(GL_LIGHTING);
+  //glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_DEPTH_TEST);
   glShadeModel(GL_SMOOTH);
 }
 
 void printHotKeys() {
-	std::cout << "\nHot Keys..\n"
-		<< "Orthogonal Projection:  O\n"
-		<< "Perspective Projection: P\n"
-		<< "Toggle Spinning:        S\n"
-		<< "Toggle Dolly Zoom:      D\n"
-		<< "Show/hide Checkerboard: C\n"
+	std::cout << "\nControls\n"
+		  << "Click and drag to draw a shape\n"
+		  << "Spin using left/right arrow keys\n"
+		<< "Zoom using the up/down arrow keys\n"
+		<< "Move the camera up, down, left or right with WASD Keys (it's reversed if you think about it as moving\n"
+		<< "   the figure up, down, left or right)/n"
+		<< "Change the shape of the vector rotation (circle or square fourier transform)\n"
 		<< "Exit:                   Esc\n\n";
 }
 
@@ -385,40 +546,70 @@ void clearModelViewMatrix()
 	{
 		for (int j = 0; j < 4; ++j)
 		{
-			g_modelViewMatrix[4 * i + j] = 0.0f;
+			if ((4 * i + j) != 5.0) {
+				g_modelViewMatrix[4 * i + j] = 0.0f;
+			}
+			
 		}
 	}
 }
 
 void updateModelViewMatrix()
 {
-	clearModelViewMatrix();
+	//clearModelViewMatrix();
+	
+	//state.time = abs(state.time - getTime());
+	float rotation = state.rotation;
+	if (lastThingStopped == "left") {
 
-
-	// You can use getTime() to change rotation over time
-	float rotation = getTime() * 2 * M_PI * rotation_rate;
-
-	g_modelViewMatrix[0] = 1.0f;
-	g_modelViewMatrix[5] = 1.0f;
-	g_modelViewMatrix[10] = 1.0f;
-
-	if (teapotSpin) {
-		// rotation matrix- keep the y axis
-		g_modelViewMatrix[0] = cos(rotation);
-		g_modelViewMatrix[2] = -sin(rotation);
-		g_modelViewMatrix[8] = -g_modelViewMatrix[2];
-		g_modelViewMatrix[10] = g_modelViewMatrix[0];
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = sin(1 * rotation);
+		//g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = -cos(1 * rotation);
+	}
+	else {
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = -sin(1 * rotation);
+		//g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = cos(1 * rotation);
 	}
 
+	if (teapotSpinLeft) {
+		state.rotation = state.time * 2 * M_PI * rotation_rate;
+		float rotation = state.rotation;
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = sin(1 * rotation);
+		//g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = -cos(1 * rotation);
+		state.time = state.time + 0.25;
+		//state.time = getTime()-state.time;
+	}
+	else if (teapotSpinRight) {
+		state.rotation = (state.time * 2 * M_PI * rotation_rate);
+		float rotation = state.rotation;
+		g_modelViewMatrix[0] = cos(1 * rotation);
+		g_modelViewMatrix[2] = -sin(1 * rotation);
+		//g_modelViewMatrix[5] = 1;
+		g_modelViewMatrix[8] = sin(1 * rotation);
+		g_modelViewMatrix[10] = cos(1 * rotation);
+		state.time = state.time  + 0.25;
+
+	}
 
 	g_modelViewMatrix[14] = -distance;
 	g_modelViewMatrix[15] = 1.0f;
-}
+	//state.time = abs(state.time - getTime());
 
+}
 void setModelViewMatrix()
 {
 	glMatrixMode(GL_MODELVIEW);
 	updateModelViewMatrix();
+	zoom();
+	goingUpFunc();
 	glLoadMatrixf(g_modelViewMatrix);
 }
 
@@ -426,7 +617,7 @@ void setModelViewMatrix()
 void renderLines() {
   
 
-  glDisable(GL_LIGHTING);
+  
 
   glColor3f(0, 0, 0);
   glLineWidth(3);
@@ -435,7 +626,9 @@ void renderLines() {
   float time = getTime() * 2 * M_PI * rotation_rate;
   std::complex<float> currentpos(0, 0);
 
+  int i = 0;
   for(Rotating r : state.rotatings) {
+    
     std::complex<float> oldpos(currentpos);
     std::complex<float> vec = r.coefficient * r.circleFunctionPointer(r.n * time);
     
@@ -444,18 +637,17 @@ void renderLines() {
 
     std::complex<float> oldposScreen = model_to_screen(oldpos);
     std::complex<float> currentposScreen = model_to_screen(currentpos);
-    glVertex3f(oldposScreen.real(), oldposScreen.imag(), 0);
-    glVertex3f(currentposScreen.real(), currentposScreen.imag(), 0);
+    glVertex3f(oldposScreen.real(), oldposScreen.imag(), -((int) state.rotatings.size()-i)*lineZStep);
+    glVertex3f(currentposScreen.real(), currentposScreen.imag(), -((int) state.rotatings.size()-i)*lineZStep + lineZStep);
+    i++;
   }
 
   glEnd();
 
-  glEnable(GL_LIGHTING);
 }
 
 
 void renderDrawing() {
-  glDisable(GL_LIGHTING);
 
   glColor3f(0, 0, 0);
   glLineWidth(3);
@@ -475,8 +667,6 @@ void renderDrawing() {
   }
   
   glEnd();
-
-  glEnable(GL_LIGHTING);
 }
 
 void drawCheckerBoard() {
@@ -517,7 +707,7 @@ void renderCheckerBoard() {
 
 	g_modelViewMatrix[0] = 1;
 	g_modelViewMatrix[2] = 0;
-	g_modelViewMatrix[5] = 1;
+	//g_modelViewMatrix[5] = 1;
 	g_modelViewMatrix[8] = 0;
 	g_modelViewMatrix[10] = 1;
 	g_modelViewMatrix[14] = -distance;
@@ -583,6 +773,7 @@ int main()
 {
   std::cout << interceptLines(std::complex<float>(0,0), std::complex<float>(-1.0,0.0),
 			      std::complex<float>(0.5,1.0), std::complex<float>(0.5,-1.0)).second << std::endl;
+	g_modelViewMatrix[5] = 1;
 	initWindow();
 	initGL();
 	printHotKeys();
