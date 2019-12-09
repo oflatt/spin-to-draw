@@ -298,42 +298,53 @@ void glfwKeyCallback(GLFWwindow* p_window, int p_key, int p_scancode, int p_acti
   if (p_key == GLFW_KEY_RIGHT) {
     if(p_action == GLFW_PRESS) {
 	  // Toggle Spinning
-	  if (!teapotSpinRight) {
-		  std::cout << "Teapot spinning on\n";
+		if (teapotSpinLeft) {
+			lastThingStopped = "left";
+			teapotSpinLeft = false;
+		}
+		if (!teapotSpinRight) {
+		  std::cout << "Teapot Right spinning on\n";
 		  teapotSpinRight = true;
-	  }
-	  if(teapotSpinLeft) {
-	    lastThingStopped = "left";
-	    teapotSpinLeft = false;
-	  }
+		}
+	  
 	  
     } else if(p_action == GLFW_RELEASE) {
       if(teapotSpinRight) {
-	teapotSpinRight = false;
-	lastThingStopped = "right";
-	std::cout << "Teapot spinning off\n";
+		teapotSpinRight = false;
+		lastThingStopped = "right";
+		std::cout << "Teapot spinning off\n";
       }
+	  if (teapotSpinLeft) {
+		  teapotSpinLeft = false;
+		  lastThingStopped = "left";
+		  std::cout << "Teapot spinning off\n";
+	  }
     }
   }
   
   if (p_key == GLFW_KEY_LEFT) {
     if(p_action == GLFW_PRESS) {
 	  // Toggle Spinning
-	  if (!teapotSpinLeft) {
+		if (teapotSpinRight) {
+			lastThingStopped = "right";
+			teapotSpinRight = false;
+		}
+		if (!teapotSpinLeft) {
 		  std::cout << "Teapot spinning on\n";
 		  teapotSpinLeft = true;
-	  }
-	  if(teapotSpinRight) {
-	    lastThingStopped = "right";
-	    teapotSpinRight = false;
-	  }
+		}
 	  
     } else if(p_action == GLFW_RELEASE) {
       if(teapotSpinLeft) {
-	teapotSpinLeft = false;
-	lastThingStopped = "left";
-	std::cout << "Teapot spinning off\n";
+		teapotSpinLeft = false;
+		lastThingStopped = "left";
+		std::cout << "Teapot spinning off\n";
       }
+	  if (teapotSpinRight) {
+		  teapotSpinRight = false;
+		  lastThingStopped = "right";
+		  std::cout << "Teapot spinning off\n";
+	  }
     }
   }
 
